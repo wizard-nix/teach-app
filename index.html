@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Трекер Прогресса Учеников</title>
+    <link href="./dist/output.css" rel="stylesheet">
+</head>
+<body class="h-screen flex overflow-hidden antialiased text-zinc-100 bg-zinc-950 selection:bg-indigo-500/30">
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden transition-opacity opacity-0"></div>
+
+    <!-- Sidebar: Ученики -->
+    <aside id="sidebar" class="fixed md:relative z-40 w-72 h-full bg-zinc-900 border-r border-zinc-800 flex flex-col shadow-2xl md:shadow-none transform transition-transform duration-300 -translate-x-full md:translate-x-0 flex-shrink-0">
+        <div class="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
+            <h1 class="text-lg font-bold text-zinc-100 flex items-center gap-2 tracking-wide">
+                <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Ученики
+            </h1>
+            <!-- Mobile Close Button -->
+            <button id="btn-close-sidebar" class="md:hidden text-zinc-400 hover:text-zinc-100 p-2 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-4">
+            <button id="btn-open-student-modal" class="w-full flex justify-center items-center gap-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 py-3 px-4 rounded-xl font-medium transition-colors border border-indigo-500/20 shadow-inner">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Добавить ученика
+            </button>
+        </div>
+
+        <ul id="students-list" class="flex-1 overflow-y-auto p-3 space-y-1">
+            <!-- Сюда будут добавляться ученики -->
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col bg-zinc-950 relative min-w-0">
+        
+        <!-- Заглушка, если ученик не выбран -->
+        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 z-10 px-4 text-center">
+            <div class="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 shadow-xl border border-zinc-800">
+                <svg class="w-10 h-10 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <h2 class="text-2xl font-semibold text-zinc-200 mb-2">Выберите ученика</h2>
+            <p class="text-zinc-500 max-w-sm">Создайте нового ученика или выберите из списка слева, чтобы отслеживать его прогресс.</p>
+            <button id="btn-open-sidebar-empty" class="md:hidden mt-8 px-6 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700">Открыть список учеников</button>
+        </div>
+
+        <!-- Контент ученика -->
+        <div id="student-content" class="hidden flex-col h-full w-full">
+            <header class="bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 md:px-8 py-4 md:py-6 flex justify-between items-center sticky top-0 z-10">
+                <div class="flex items-center gap-3">
+                    <button id="btn-open-sidebar" class="md:hidden text-zinc-400 hover:text-zinc-100 p-2 -ml-2 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <div>
+                        <h2 id="current-student-name" class="text-xl md:text-2xl font-bold text-zinc-100 tracking-tight truncate max-w-[150px] sm:max-w-xs md:max-w-md">Имя Ученика</h2>
+                        <p id="current-student-stats" class="text-xs md:text-sm text-zinc-500 mt-1">Тем пройдено: 0 из 0</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 md:gap-3">
+                    <button id="btn-delete-student" class="text-zinc-500 hover:text-red-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors" title="Удалить ученика">
+                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                    <button id="btn-open-topic-modal" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-medium shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2 text-sm md:text-base border border-indigo-400/20">
+                        <svg class="w-5 h-5 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span class="md:hidden">+</span>
+                        <span class="hidden md:inline">Добавить тему</span>
+                        <span class="md:hidden">Тема</span>
+                    </button>
+                </div>
+            </header>
+            
+            <div class="px-4 md:px-8 pt-6 pb-2">
+                <div class="bg-zinc-900 border border-rose-500/20 rounded-2xl p-5 shadow-sm relative group">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Фиксация проблем
+                        </h3>
+                        <button id="btn-edit-problems" class="text-zinc-500 hover:text-rose-400 bg-zinc-800/80 hover:bg-zinc-700 p-1.5 rounded-lg transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100" title="Редактировать">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <!-- View Mode -->
+                    <div id="problems-view-container" class="block">
+                        <div id="problems-view" class="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed break-words"></div>
+                        <div id="problems-empty" class="text-sm text-zinc-500 italic hidden">Нет зафиксированных проблем. Нажмите иконку редактирования, чтобы добавить.</div>
+                    </div>
+                    
+                    <!-- Edit Mode -->
+                    <div id="problems-edit-container" class="hidden flex-col gap-3">
+                        <textarea id="input-student-problems" rows="3" class="w-full px-4 py-3 bg-zinc-950 border border-rose-500/30 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all placeholder-zinc-600 text-zinc-100 resize-none" placeholder="Опишите сложности или зоны роста, на которые нужно обратить внимание..."></textarea>
+                        <div class="flex justify-end gap-2">
+                            <button id="btn-cancel-problems" class="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">Отмена</button>
+                            <button id="btn-save-problems" class="px-4 py-2 text-xs font-medium text-white bg-rose-600 hover:bg-rose-500 rounded-lg shadow-lg shadow-rose-500/20 transition-all active:scale-95 border border-rose-500/50">Сохранить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 md:px-8 md:pb-8 md:pt-4">
+                <!-- Сетка карточек с темами -->
+                <div id="topics-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-20">
+                    <!-- Сюда будут добавляться темы -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Добавить ученика -->
+    <div id="modal-student" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden items-center justify-center z-50 opacity-0 transition-opacity p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-200">
+            <div class="px-6 py-5 border-b border-zinc-800 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-zinc-100">Новый ученик</h3>
+                <button class="close-modal text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 p-1.5 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="form-student" class="p-6">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">ФИО Ученика</label>
+                    <input type="text" id="input-student-name" required placeholder="Например, Иван Иванов" class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-zinc-600 text-zinc-100">
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" class="close-modal px-5 py-2.5 text-sm font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition-colors">Отмена</button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 border border-indigo-400/20">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Добавить/Редактировать тему -->
+    <div id="modal-topic" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden items-center justify-center z-50 opacity-0 transition-opacity p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-200 flex flex-col max-h-[90vh]">
+            <div class="px-6 py-5 border-b border-zinc-800 flex justify-between items-center shrink-0">
+                <h3 id="modal-topic-title" class="text-lg font-semibold text-zinc-100">Новая тема</h3>
+                <button class="close-modal text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 p-1.5 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="form-topic" class="p-6 overflow-y-auto flex-1">
+                <input type="hidden" id="input-topic-id">
+                
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">Название темы</label>
+                    <input type="text" id="input-topic-name" required placeholder="Например, Логарифмы" class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-zinc-600 text-zinc-100">
+                </div>
+                
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">Дата</label>
+                    <!-- text-zinc-100 and color-scheme: dark ensures the date picker is dark on supported browsers -->
+                    <input type="date" id="input-topic-date" required style="color-scheme: dark;" class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-zinc-100">
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-sm font-medium text-zinc-400">Прогресс</label>
+                        <span id="progress-val-display" class="text-sm font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">0%</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="input-topic-progress" min="0" max="100" value="0" class="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-zinc-400 mb-2">Примечание</label>
+                    <textarea id="input-topic-notes" rows="3" placeholder="Дополнительные комментарии..." class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-zinc-600 text-zinc-100 resize-none"></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="close-modal px-5 py-2.5 text-sm font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xl transition-colors">Отмена</button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 border border-indigo-400/20">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./js/app.js"></script>
+</body>
+</html>
